@@ -6,7 +6,7 @@ type IRouteType = 'not_founded' | 'forbiden' | 'default' | 'custom';
 export type IRouteEntry<NAME extends string> = {
   name: NAME;
   path: `/${string}`;
-  target: unknown;
+  target: (router?: IRouter<NAME>) => unknown;
   type?: IRouteType;
   meta?: {
     [key: string]: any;
@@ -20,7 +20,7 @@ export type IRouteEntry<NAME extends string> = {
 export type IRouteOutput<NAME extends string = string> = {
   name: NAME;
   path: `/${string}`;
-  target: unknown;
+  target: (router?: IRouter<NAME>) => unknown;
   type: IRouteType;
   meta?: {
     [key: string]: any;
@@ -32,7 +32,7 @@ export type IRouteOutput<NAME extends string = string> = {
 };
 
 export type IConfig<ROUTE extends IRouteOutput<NAME>, NAME extends string> = {
-  targetAction: (...args: [ROUTE]) => void;
+  // targetAction: (...args: [ROUTE]) => void;
   beforeChange?: (...args: [ROUTE, () => void]) => void;
   onChange?: (...args: [ROUTE, () => void]) => void;
   afterChange?: (...args: [ROUTE, () => void]) => void;
@@ -44,19 +44,19 @@ const defaultRoutes: IDefaultRoutes = {
   forbiden: {
     name: 'forbiden',
     path: '/forbiden',
-    target: 'forbiden route',
+    target: () => 'forbiden route',
     type: 'forbiden',
   },
   not_founded: {
     name: 'not_founded',
     path: '/not_founded',
-    target: 'not_founded route',
+    target: () => 'not_founded route',
     type: 'not_founded',
   },
   default: {
     name: 'default',
     path: '/default',
-    target: 'default route',
+    target: () => 'default route',
     type: 'default',
   },
 };
@@ -249,6 +249,11 @@ const makeRouter = <ROUTES extends ROUTE[], ROUTE extends IRouteOutput<NAME>, NA
     currentRoute,
     currentTarget,
   };
+};
+
+export type IRouter<NAMES> = {
+  redirect: (config: { name: NAMES }) => void;
+  back: () => void;
 };
 
 export const defineRouter = () => {
