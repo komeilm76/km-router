@@ -178,7 +178,6 @@ const makeRouter = <ROUTES extends ROUTE[], ROUTE extends IRouteOutput<NAME>, NA
         currentRoute.next(route);
         subscriber.next(route);
       }
-      console.log('route.requestType', route.requestType);
 
       if (route.requestType == 'back-history') {
         let findedIndex = routerHistory
