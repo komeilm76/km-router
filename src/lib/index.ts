@@ -1,5 +1,7 @@
+import kmList from 'km-list';
 import _ from 'lodash';
 import { BehaviorSubject, ReplaySubject } from 'rxjs';
+import { v4 as uuidV4 } from 'uuid';
 
 type IRouteType = 'not_founded' | 'forbiden' | 'default' | 'custom';
 
@@ -29,6 +31,8 @@ export type IRouteOutput<NAME extends string = string> = {
   beforeChange?: (v: IRouteOutput, next: () => void) => void;
   afterChange?: (v: IRouteOutput, next: () => void) => void;
   onChange?: (v: IRouteOutput, next: () => void) => void;
+  instanceId?: string;
+  requestType?: 'redirect' | 'back-history';
 };
 
 export type IConfig<ROUTE extends IRouteOutput<NAME>, NAME extends string> = {
@@ -97,7 +101,7 @@ const makeRouter = <ROUTES extends ROUTE[], ROUTE extends IRouteOutput<NAME>, NA
   routes: [...ROUTES],
   config: IConfig<[...ROUTES][number], ROUTES[number]['name']>
 ) => {
-  const routerHistory: ROUTE[] = [];
+  let routerHistory = new BehaviorSubject<ROUTE[]>([]);
   const currentRoute = new BehaviorSubject<ROUTES[number] | undefined>(undefined);
   const currentTarget = new BehaviorSubject<ROUTES[number]['target'] | undefined>(undefined);
   // listener
@@ -108,13 +112,14 @@ const makeRouter = <ROUTES extends ROUTE[], ROUTE extends IRouteOutput<NAME>, NA
   const onChangeListener = new ReplaySubject<ROUTES[number]>();
   const afterListener = new ReplaySubject<ROUTES[number]>();
 
-  const getDefaultRouteInInitialize = () => {
-    const findedRoute = routes.find((item) => {
-      return item.name == config.defaultRoute;
-    });
+  // const getDefaultRouteInInitialize = () => {
+  //   const findedRoute = routes.find((item) => {
+  //     return item.name == config.defaultRoute;
+  //   });
 
-    requestListener.next(findedRoute);
-  };
+  //   requestListener.next(findedRoute);
+  // };
+
   const getRouteByType = (entryType: keyof IDefaultRoutes) => {
     const findedRoute =
       routes.find((item) => {
@@ -173,6 +178,23 @@ const makeRouter = <ROUTES extends ROUTE[], ROUTE extends IRouteOutput<NAME>, NA
         currentRoute.next(route);
         subscriber.next(route);
       }
+      console.log('route.requestType', route.requestType);
+
+      if (route.requestType == 'back-history') {
+        let findedIndex = routerHistory
+          .getValue()
+          .findIndex((item) => item.instanceId == route.instanceId);
+        routerHistory.next(kmList.removeElementAtIndexes(routerHistory.getValue(), [findedIndex]));
+      } else {
+        const lastRouteInHistory = _.last(routerHistory.getValue());
+        if (lastRouteInHistory) {
+          if (lastRouteInHistory.name !== route.name) {
+            routerHistory.next(kmList.addElementAtLastIndex(routerHistory.getValue(), route));
+          }
+        } else {
+          routerHistory.next(kmList.addElementAtLastIndex(routerHistory.getValue(), route));
+        }
+      }
     };
     if (config.onChange) {
       config.onChange(route, () => {
@@ -227,11 +249,15 @@ const makeRouter = <ROUTES extends ROUTE[], ROUTE extends IRouteOutput<NAME>, NA
     let findedRoute = routes.find((item) => {
       return item.name == options.name;
     });
-    requestListener.next(findedRoute);
+    const route: ROUTES[number] | undefined = findedRoute
+      ? { ...findedRoute, instanceId: findedRoute.instanceId ?? uuidV4(), requestType: 'redirect' }
+      : undefined;
+
+    requestListener.next(route);
   };
   const back = () => {
-    let route = _.last(routerHistory);
-    route && requestListener.next(route);
+    let route = _.last(routerHistory.getValue());
+    route && requestListener.next({ ...route, requestType: 'back-history' });
   };
   currentRoute.subscribe((route) => {
     if (route) {
@@ -239,7 +265,10 @@ const makeRouter = <ROUTES extends ROUTE[], ROUTE extends IRouteOutput<NAME>, NA
     }
   });
 
-  getDefaultRouteInInitialize();
+  if (config.defaultRoute) {
+    redirect({ name: config.defaultRoute });
+  }
+  // getDefaultRouteInInitialize();
   return {
     redirect,
     back,
@@ -248,6 +277,7 @@ const makeRouter = <ROUTES extends ROUTE[], ROUTE extends IRouteOutput<NAME>, NA
     afterChange: afterListener,
     currentRoute,
     currentTarget,
+    history: routerHistory,
   };
 };
 

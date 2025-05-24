@@ -37,7 +37,9 @@
     "@types/node": "^22.5.5",
     "cross-env": "^7.0.3",
     "km-lineup": "^0.0.5",
-    "km-type": "^0.0.3"
+    "km-list": "^0.0.7",
+    "km-type": "^0.0.3",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "nodemon": "3.1.6",
