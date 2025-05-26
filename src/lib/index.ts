@@ -4,10 +4,9 @@ import { BehaviorSubject, ReplaySubject } from 'rxjs';
 import { v4 as uuidV4 } from 'uuid';
 
 type IRouteType = 'not_founded' | 'forbiden' | 'default' | 'custom';
-type IPath = `/${string}`;
-export type IRouteEntry<NAME extends string> = {
+export type IRouteEntry<NAME extends string, PATH extends string> = {
   name: NAME;
-  path: IPath;
+  path: PATH;
   target: (router?: IRouter<NAME>) => any;
   type?: IRouteType;
   meta?: {
@@ -19,9 +18,9 @@ export type IRouteEntry<NAME extends string> = {
   onChange?: (v: IRouteOutput, next: () => void) => void;
 };
 
-export type IRouteOutput<NAME extends string = string> = {
+export type IRouteOutput<NAME extends string = string, PATH extends string = string> = {
   name: NAME;
-  path: IPath;
+  path: PATH;
   target: (router?: IRouter<NAME>) => any;
   type: IRouteType;
   meta?: {
@@ -35,7 +34,11 @@ export type IRouteOutput<NAME extends string = string> = {
   requestType?: 'redirect' | 'back-history';
 };
 
-export type IConfig<ROUTE extends IRouteOutput<NAME>, NAME extends string> = {
+export type IConfig<
+  ROUTE extends IRouteOutput<NAME, PATH>,
+  NAME extends string,
+  PATH extends string
+> = {
   // targetAction: (...args: [ROUTE]) => void;
   beforeChange?: (...args: [ROUTE, () => void]) => void;
   onChange?: (...args: [ROUTE, () => void]) => void;
@@ -67,14 +70,16 @@ const defaultRoutes: IDefaultRoutes = {
 
 const makeRoutes = <
   NAME extends string = string,
-  ROUTE_ENTRY extends IRouteEntry<NAME> = IRouteEntry<NAME>,
+  PATH extends string = string,
+  ROUTE_ENTRY extends IRouteEntry<NAME, PATH> = IRouteEntry<NAME, PATH>,
   ROUTES_ENTRY extends ROUTE_ENTRY[] = ROUTE_ENTRY[],
-  ROUTE_OUTPUT extends IRouteOutput<ROUTES_ENTRY[number]['name']> = IRouteOutput<
-    ROUTES_ENTRY[number]['name']
-  >,
+  ROUTE_OUTPUT extends IRouteOutput<
+    ROUTES_ENTRY[number]['name'],
+    ROUTES_ENTRY[number]['path']
+  > = IRouteOutput<ROUTES_ENTRY[number]['name'], ROUTES_ENTRY[number]['path']>,
   ROUTES_OUTPUT extends ROUTE_OUTPUT[] = ROUTE_OUTPUT[]
 >(
-  routes: IRouteEntry<NAME>[]
+  routes: IRouteEntry<NAME, PATH>[]
 ) => {
   // @ts-ignore
   let modifiedRoutes = routes.map((item) => {
@@ -97,9 +102,14 @@ const makeRoutes = <
   return output;
 };
 
-const makeRouter = <ROUTES extends ROUTE[], ROUTE extends IRouteOutput<NAME>, NAME extends string>(
+const makeRouter = <
+  ROUTES extends ROUTE[],
+  ROUTE extends IRouteOutput<NAME, PATH>,
+  NAME extends string,
+  PATH extends string
+>(
   routes: [...ROUTES],
-  config: IConfig<[...ROUTES][number], ROUTES[number]['name']>
+  config: IConfig<[...ROUTES][number], ROUTES[number]['name'], ROUTES[number]['path']>
 ) => {
   let routerHistory = new BehaviorSubject<ROUTE[]>([]);
   const currentRoute = new BehaviorSubject<ROUTES[number] | undefined>(undefined);
