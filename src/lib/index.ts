@@ -278,6 +278,7 @@ const makeRouter = <
   if (config.defaultRoute) {
     redirect({ name: config.defaultRoute });
   }
+
   // getDefaultRouteInInitialize();
   return {
     redirect,
@@ -291,6 +292,10 @@ const makeRouter = <
   };
 };
 
+const makePath = <P extends string, C extends string>(parent: P, children: C) => {
+  return `${parent}/${children}` as `${P}/${C}`;
+};
+
 export type IRouter<NAMES> = {
   redirect: (config: { name: NAMES }) => void;
   back: () => void;
@@ -300,10 +305,12 @@ export const defineRouter = () => {
   return {
     makeRouter,
     makeRoutes,
+    makePath,
   };
 };
 
 export default {
   makeRouter,
   makeRoutes,
+  makePath,
 };
