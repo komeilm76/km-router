@@ -4,11 +4,11 @@ import { BehaviorSubject, ReplaySubject } from 'rxjs';
 import { v4 as uuidV4 } from 'uuid';
 
 type IRouteType = 'not_founded' | 'forbiden' | 'default' | 'custom';
-
+type IPath = `/${string}`;
 export type IRouteEntry<NAME extends string> = {
   name: NAME;
-  path: `/${string}`;
-  target: (router?: IRouter<NAME>) => unknown;
+  path: IPath;
+  target: (router?: IRouter<NAME>) => any;
   type?: IRouteType;
   meta?: {
     [key: string]: any;
@@ -21,8 +21,8 @@ export type IRouteEntry<NAME extends string> = {
 
 export type IRouteOutput<NAME extends string = string> = {
   name: NAME;
-  path: `/${string}`;
-  target: (router?: IRouter<NAME>) => unknown;
+  path: IPath;
+  target: (router?: IRouter<NAME>) => any;
   type: IRouteType;
   meta?: {
     [key: string]: any;
@@ -255,20 +255,6 @@ const makeRouter = <ROUTES extends ROUTE[], ROUTE extends IRouteOutput<NAME>, NA
     requestListener.next(route);
   };
 
-  const getRouteInfo = <
-    NAME extends string,
-    OPTIONS extends { name: ROUTES[number]['name'] } | { name: NAME }
-  >(
-    options: OPTIONS
-  ) => {
-    let findedRoute = routes.find((item) => {
-      return item.name == options.name;
-    });
-    const route: ROUTES[number] | undefined = findedRoute;
-
-    return route;
-  };
-
   const back = () => {
     let route = _.last(routerHistory.getValue());
     route && requestListener.next({ ...route, requestType: 'back-history' });
@@ -284,7 +270,6 @@ const makeRouter = <ROUTES extends ROUTE[], ROUTE extends IRouteOutput<NAME>, NA
   }
   // getDefaultRouteInInitialize();
   return {
-    getRouteInfo,
     redirect,
     back,
     beforeChange: beforeListener,
@@ -297,7 +282,6 @@ const makeRouter = <ROUTES extends ROUTE[], ROUTE extends IRouteOutput<NAME>, NA
 };
 
 export type IRouter<NAMES> = {
-  getRouteInfo: (config: { name: NAMES }) => IRouteOutput;
   redirect: (config: { name: NAMES }) => void;
   back: () => void;
 };
@@ -306,12 +290,10 @@ export const defineRouter = () => {
   return {
     makeRouter,
     makeRoutes,
-    // staticRoute,
   };
 };
 
 export default {
   makeRouter,
   makeRoutes,
-  // staticRoute,
 };
