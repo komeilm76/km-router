@@ -264,6 +264,21 @@ const makeRouter = <
 
     requestListener.next(route);
   };
+  const redirectByPath = <
+    PATH extends string,
+    OPTIONS extends { path: ROUTES[number]['path'] } | { path: PATH }
+  >(
+    options: OPTIONS
+  ) => {
+    let findedRoute = routes.find((item) => {
+      return item.path == options.path;
+    });
+    const route: ROUTES[number] | undefined = findedRoute
+      ? { ...findedRoute, instanceId: findedRoute.instanceId ?? uuidV4(), requestType: 'redirect' }
+      : undefined;
+
+    requestListener.next(route);
+  };
 
   const back = () => {
     let route = _.last(routerHistory.getValue());
@@ -282,6 +297,7 @@ const makeRouter = <
   // getDefaultRouteInInitialize();
   return {
     redirect,
+    redirectByPath,
     back,
     beforeChange: beforeListener,
     onChange: onChangeListener,
@@ -298,6 +314,7 @@ const makePath = <P extends string, C extends string>(parent: P, children: C) =>
 
 export type IRouter<NAMES> = {
   redirect: (config: { name: NAMES }) => void;
+  redirectByPath: (config: { path: NAMES }) => void;
   back: () => void;
 };
 
